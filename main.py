@@ -2,10 +2,13 @@ import librosa
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import preprocessing
+from Speaker import Speaker
+from knn import Knn
 
 SAMPLING_RATE = 16000
 hop_len = 512
 prefixes = ['BJ', 'HN', 'PK', 'PT', 'ZZ']
+test_mfcc = [-388.3489471435547, 13.547713041305542, -5.369972674548626, 58.523172760009764, -17.565272903442384, 13.892732334136962, -5.140625596046448, 6.523916959762573, 1.3403185039758683, 3.3588162899017333, 8.3439462184906, 1.376888209581375, 4.443789267539978]
 
 def get_mfcc(prefix, dict):
     for i in range(1, 11):
@@ -26,18 +29,19 @@ def get_mfcc_mean(prefix):
 
 def get_all_mfcc_means(dict):
     mfcc_means = []
+    speakers = []
     i = 0
     for prefix in prefixes:
         # oblicz listę współczynników jednej osoby dla wszyskich nagrań
         mfcc_table = np.array(get_mfcc_mean(prefix)).T.tolist()
         # dodaj średnią z każdego współczynnika do tablicy średnich
+        speakers.append(Speaker([np.mean(table) for table in mfcc_table], prefix))
         mfcc_means.append([np.mean(table) for table in mfcc_table])
         print(f'[{prefix}] mfcc_means: {mfcc_means[i]}')
         # Dodaj do słownika średnie
         dict[prefix] = mfcc_means[i]
         i += 1
-    return mfcc_means
-
+    return [mfcc_means, speakers]
 def get_all_mfcc(dict):
     for prefix in prefixes:
         get_mfcc(prefix, dict)
@@ -48,13 +52,20 @@ def main ():
     get_all_mfcc(mfcc_all_dictionary)
     print(mfcc_all_dictionary)
     mfcc_means_dictionary = dict()
-    global_mfcc_means = get_all_mfcc_means(mfcc_means_dictionary)
+    global_mfcc_means = get_all_mfcc_means(mfcc_means_dictionary)[0]
     print(mfcc_means_dictionary)
+    # print("to do knn \n", get_all_mfcc_means(mfcc_means_dictionary)[1])
+    knn = Knn(get_all_mfcc_means(mfcc_means_dictionary)[1])
+    # lista osób, które wygrały dla poszczególnych indeksów mfcc
+    winners = knn.find_winners(test_mfcc)
+    print(winners)
+    # najczęściej występująca osoba
+    print(knn.get_winner(winners))
     # Transposing list to match plt format
-    plt.plot(np.array(global_mfcc_means).T.tolist())
-    plt.ylabel('MFCC val')
-    plt.xlabel('MFCC idx')
-    plt.show()
+    # plt.plot(np.array(global_mfcc_means).T.tolist())
+    # plt.ylabel('MFCC val')
+    # plt.xlabel('MFCC idx')
+    # plt.show()
 
 # [BJ] mfcc_means: [-388.3489471435547, 49.38297576904297, 7.8444747686386105, 41.1297794342041, -0.16219628229737282, -0.0397356778383255, -1.5765647903084754, 4.141047525405884, 2.1754455413669347, 5.320105957984924, 2.952728569507599, 5.791269254684448, 1.2452065262012184]
 # [HN] mfcc_means: [-195.9180160522461, 16.14417428970337, 4.962639139592648, 58.52317314147949, -25.354970359802245, 23.945265197753905, -6.618231773376465, -8.897641658782959, 6.040571284294129, 7.052741050720215, 2.785193556547165, 2.3840505599975588, 4.443789267539978]
