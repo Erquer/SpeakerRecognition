@@ -3,7 +3,7 @@ import numpy as np
 
 class Knn:
     speakers = []
-
+    k = 3
     def __init__(self,  speakers):
         self.speakers = speakers
 
@@ -18,14 +18,26 @@ class Knn:
                 for speaker in self.speakers:
                     values_for_certain_index.append(Name_combined_value(speaker.mfcc_mean[x], speaker.name))
                 values_for_certain_index = sorted(values_for_certain_index, key=lambda x: x.mfcc, reverse=False)
-                local_winner = self.find_nearest(values_for_certain_index, value[x])
-                winners.append(local_winner.name)
+                local_winners = self.find_k_nearest(values_for_certain_index, value[x])
+                print(local_winners)
+                winners.append(local_winners)
         return winners
 
-    def find_nearest(self, array, value):
-        array2 = np.asarray(list(map(lambda x: x.mfcc, array)))
-        idx = (np.abs(array2 - value)).argmin()
-        return array[idx]
+    def find_k_nearest(self, array, value):
+        # array2 = np.asarray(list(map(lambda x: x.mfcc, array)))
+        # idx = (np.abs(array2 - value))
+        # return array[idx]
+
+        for element in array:
+            element.set_diff(abs(element.mfcc - value))
+        sorted_winners_by_score = sorted(array, key=lambda x: x.diff, reverse= False)
+
+        if self.k > len(sorted_winners_by_score):
+            return list(map(lambda x: x.name, sorted_winners_by_score))
+        elif self.k < 0:
+            return []
+        else:
+            return list(map(lambda x: x.name, sorted_winners_by_score))[:self.k]
 
     def get_winner(self, winners):
         counter = 0
