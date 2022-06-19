@@ -1,3 +1,5 @@
+import collections
+
 from Name_combined_value import Name_combined_value
 import numpy as np
 
@@ -41,6 +43,18 @@ class Knn:
 
     def get_winner(self, winners):
         counter = 0
+        if isinstance(winners[0], collections.Sequence):
+            new_winners = []
+            for names in winners:
+                local_counter = 0
+                name = names[0]
+                for i in names:
+                    curr_frequency = winners.count(i)
+                    if curr_frequency > local_counter:
+                        local_counter = curr_frequency
+                        name = i
+                new_winners.append(name)
+            winners = new_winners
         num = winners[0]
 
         for i in winners:
